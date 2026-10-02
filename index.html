@@ -2,18 +2,18 @@
 <html lang="vi" class="h-full bg-slate-50">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hệ Thống Điểm Danh Wi-Fi & Chấm Công Tự Động</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SmartWi Checkin - Điểm Danh Wi-Fi & Phân Quyền Admin</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- QRCode Generator CDN -->
+  <!-- QRCode Generator -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <script>
@@ -22,14 +22,15 @@
         extend: {
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
           },
           colors: {
             brand: {
               50: '#eff6ff',
               100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              700: '#1e40af',
             }
           }
         }
@@ -37,79 +38,90 @@
     }
   </script>
   <style>
-    /* Custom scrollbars for clean dashboards */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    /* Custom styling & animations */
+    .pin-input::-webkit-outer-spin-button,
+    .pin-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
-    ::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
+    .pin-input {
+      -moz-appearance: textfield;
     }
   </style>
 </head>
-<body class="h-full flex flex-col font-sans text-slate-800 antialiased selection:bg-brand-500 selection:text-white">
+<body class="h-full flex flex-col font-sans text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
 
-  <!-- Top Navigation Bar -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
-        <!-- Logo & Title -->
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+        
+        <!-- Logo & Branding -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('checkin')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25">
             <i data-lucide="wifi" class="w-5 h-5"></i>
           </div>
           <div>
-            <h1 class="text-lg font-bold leading-tight text-slate-900 flex items-center gap-2">
-              SmartWi Check-in
-              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">v2.5</span>
-            </h1>
-            <p class="text-xs text-slate-500 hidden sm:block">Điểm danh qua Wi-Fi nội bộ & Tự động xuất công tháng</p>
+            <div class="flex items-center gap-2">
+              <span class="text-base sm:text-lg font-bold text-slate-900 tracking-tight">SmartWi Checkin</span>
+              <span id="role-badge" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                Nhân viên
+              </span>
+            </div>
+            <p id="header-loc-name" class="text-xs text-slate-500 truncate max-w-[200px] sm:max-w-xs">
+              Đang tải địa điểm...
+            </p>
           </div>
         </div>
 
-        <!-- Navigation Tabs -->
-        <nav class="flex items-center space-x-1 sm:space-x-2">
-          <button id="tab-checkin" onclick="switchTab('checkin')" class="flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg text-blue-600 bg-blue-50 transition-colors">
-            <i data-lucide="scan-face" class="w-4 h-4"></i>
-            <span>Chấm Công</span>
+        <!-- Navigation Tabs & Admin Lock Button -->
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <!-- Tab Nhân viên: Điểm danh -->
+          <button id="nav-btn-checkin" onclick="switchTab('checkin')" class="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 transition">
+            <i data-lucide="scan-line" class="w-4 h-4"></i>
+            <span>Điểm Danh</span>
           </button>
-          <button id="tab-timesheet" onclick="switchTab('timesheet')" class="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
-            <i data-lucide="calendar-days" class="w-4 h-4"></i>
+
+          <!-- Tab Bảng Công (Admin only) -->
+          <button id="nav-btn-timesheet" onclick="handleProtectedNav('timesheet')" class="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
             <span>Bảng Công</span>
           </button>
-          <button id="tab-admin" onclick="switchTab('admin')" class="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
-            <i data-lucide="settings" class="w-4 h-4"></i>
-            <span class="hidden md:inline">Cài Đặt & QR</span>
+
+          <!-- Tab Cài Đặt (Admin only) -->
+          <button id="nav-btn-admin" onclick="handleProtectedNav('admin')" class="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            <span>Cài Đặt IP & QR</span>
           </button>
-        </nav>
+
+          <!-- Admin Authentication Toggle Button -->
+          <div class="h-6 w-px bg-slate-200 mx-1"></div>
+
+          <button id="btn-admin-auth" onclick="toggleAdminAuthModal()" class="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition">
+            <i data-lucide="lock" class="w-4 h-4 text-amber-400" id="admin-lock-icon"></i>
+            <span id="admin-auth-label">Quản Lý</span>
+          </button>
+        </div>
+
       </div>
     </div>
   </header>
 
-  <!-- Global Wi-Fi / IP Status Bar -->
-  <div id="ip-status-banner" class="bg-amber-50 border-b border-amber-200 px-4 py-2.5 transition-all duration-300">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm">
+  <div id="ip-status-banner" class="bg-amber-50 border-b border-amber-200 px-4 py-2 transition-all">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 text-xs">
       <div class="flex items-center gap-2">
-        <span id="ip-status-indicator" class="relative flex h-3 w-3">
+        <span id="ip-indicator-dot" class="relative flex h-2.5 w-2.5">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
         </span>
-        <span id="ip-status-text" class="font-medium text-amber-900">
-          Đang kiểm tra kết nối mạng Wi-Fi của bạn...
+        <span id="ip-status-message" class="font-medium text-amber-900">
+          Đang xác thực đường truyền Wi-Fi...
         </span>
       </div>
-      <div class="flex items-center gap-3 font-mono text-xs">
-        <span class="text-slate-600 bg-white/80 px-2.5 py-1 rounded border border-amber-200">
-          IP Của Bạn: <strong id="current-detected-ip" class="text-slate-900">Đang quét...</strong>
+      <div class="flex items-center gap-2 font-mono">
+        <span class="text-slate-600 bg-white/90 px-2 py-0.5 rounded border border-amber-200">
+          IP Máy Bạn: <strong id="detected-ip-label" class="text-slate-900">Đang quét...</strong>
         </span>
-        <button onclick="detectUserIP(true)" class="p-1 text-slate-600 hover:text-blue-600 rounded transition" title="Tải lại IP">
+        <button onclick="detectClientIP(true)" class="p-1 text-slate-500 hover:text-blue-600 rounded transition" title="Làm mới IP">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
         </button>
       </div>
@@ -118,39 +130,39 @@
 
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- ==================== TAB 1: CHECK-IN / CHECK-OUT ==================== -->
-    <section id="section-checkin" class="space-y-6">
+    <!-- ========================================== -->
+    <!-- TAB 1: MÀN HÌNH ĐIỂM DANH DÀNH CHO NHÂN VIÊN -->
+    <!-- ========================================== -->
+    <section id="tab-view-checkin" class="space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Left: Digital Clock & Main Action Card -->
-        <div class="lg:col-span-7 space-y-6">
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 relative overflow-hidden">
-            <!-- Decorative blur background -->
-            <div class="absolute -right-10 -top-10 w-44 h-44 bg-blue-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
 
-            <!-- Real-time Clock -->
+        <!-- Cột Trái: Đồng hồ & 2 nút Chấm Công Vào/Ra -->
+        <div class="lg:col-span-7 space-y-6">
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 relative overflow-hidden">
+            
+            <!-- Realtime Clock Widget -->
             <div class="text-center pb-6 border-b border-slate-100">
-              <div id="live-time" class="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 font-mono">
-                00:00:00
+              <div id="live-clock-time" class="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 font-mono">
+                --:--:--
               </div>
-              <div id="live-date" class="text-sm font-medium text-slate-500 mt-1 capitalize">
-                Đang tải ngày...
+              <div id="live-clock-date" class="text-sm font-medium text-slate-500 mt-1 capitalize">
+                Đang nạp thời gian...
               </div>
-              <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
-                <i data-lucide="map-pin" class="w-3 h-3 text-slate-500"></i>
-                <span id="active-location-name">Cơ sở: Văn phòng chính</span>
+              <div class="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                <i data-lucide="radio" class="w-3.5 h-3.5 text-blue-500 animate-pulse"></i>
+                <span id="active-wifi-badge">Wi-Fi: Đang đọc...</span>
               </div>
             </div>
 
-            <!-- Employee Selection Form -->
+            <!-- Nhân viên chọn tên và bấm điểm danh -->
             <div class="mt-6 space-y-4">
               <div>
-                <label for="employee-select" class="block text-sm font-medium text-slate-700 mb-1.5">
-                  1. Chọn nhân viên điểm danh <span class="text-rose-500">*</span>
+                <label for="emp-select-box" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  1. Chọn Tên Bạn Để Điểm Danh <span class="text-rose-500">*</span>
                 </label>
                 <div class="relative">
-                  <select id="employee-select" class="w-full pl-10 pr-10 py-3 bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-200 rounded-xl text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition appearance-none">
-                    <option value="">-- Vui lòng chọn tên nhân viên --</option>
+                  <select id="emp-select-box" class="w-full pl-10 pr-10 py-3.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-2xl text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none transition appearance-none text-sm sm:text-base">
+                    <option value="">-- Bấm vào đây để chọn tên của bạn --</option>
                   </select>
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <i data-lucide="user-check" class="w-5 h-5"></i>
@@ -161,89 +173,72 @@
                 </div>
               </div>
 
-              <!-- Note / Memo input (Optional) -->
+              <!-- Ghi chú nhanh (Tùy chọn) -->
               <div>
-                <label for="check-note" class="block text-xs font-medium text-slate-500 mb-1">
-                  Ghi chú ca làm (Tùy chọn)
+                <label for="emp-note-input" class="block text-xs font-medium text-slate-500 mb-1">
+                  Ghi chú ca làm (nếu có):
                 </label>
-                <input type="text" id="check-note" placeholder="Ví dụ: Đi muộn có báo quản lý, đổi ca..." 
-                  class="w-full px-3.5 py-2 text-sm bg-slate-50 focus:bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                <input type="text" id="emp-note-input" placeholder="Ví dụ: Đi muộn có xin phép, đổi ca..." 
+                  class="w-full px-4 py-2.5 text-sm bg-slate-50 focus:bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
               </div>
 
-              <!-- Wi-Fi Gatekeeper Warning -->
-              <div id="wifi-gate-alert" class="hidden p-3.5 rounded-xl border border-rose-200 bg-rose-50/80 text-rose-800 text-sm">
-                <div class="flex items-start gap-2.5">
-                  <i data-lucide="shield-alert" class="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5"></i>
+              <!-- Cảnh báo nếu chưa bắt đúng Wi-Fi quán -->
+              <div id="wrong-wifi-alert" class="hidden p-4 rounded-2xl border border-rose-200 bg-rose-50 text-rose-800 text-xs sm:text-sm">
+                <div class="flex items-start gap-3">
+                  <i data-lucide="shield-alert" class="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5"></i>
                   <div>
-                    <strong class="font-semibold block">Bạn không ở mạng Wi-Fi hợp lệ!</strong>
-                    <p class="text-xs text-rose-700 mt-0.5 leading-relaxed">
-                      Thiết bị phải kết nối vào Wi-Fi <b id="required-wifi-name">Văn phòng</b> (IP: <code id="required-ip-view" class="font-mono">113.x.x.x</code>) để mở khóa điểm danh.
+                    <strong class="font-bold block text-sm">Chưa bắt Wi-Fi của quán!</strong>
+                    <p class="mt-0.5 text-rose-700 leading-relaxed">
+                      Bạn đang dùng 4G hoặc Wi-Fi khác. Vui lòng kết nối vào Wi-Fi <b id="alert-req-ssid" class="font-semibold text-rose-900">...</b> để hệ thống mở khóa nút điểm danh.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <!-- Check-In / Check-Out Action Buttons -->
+              <!-- 2 Nút hành động VÀO CA / RA CA -->
               <div class="pt-2 grid grid-cols-2 gap-3 sm:gap-4">
-                <button id="btn-checkin" onclick="processAttendance('IN')" class="group relative overflow-hidden flex flex-col items-center justify-center p-4 sm:p-5 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-600 text-white font-bold shadow-lg shadow-emerald-500/25 hover:from-emerald-600 hover:to-emerald-700 active:scale-[0.98] transition disabled:opacity-50 disabled:pointer-events-none disabled:shadow-none">
-                  <div class="flex items-center gap-2 text-lg sm:text-xl">
-                    <i data-lucide="log-in" class="w-6 h-6 transition-transform group-hover:translate-x-1"></i>
+                <button id="btn-punch-in" onclick="submitAttendance('IN')" class="group flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold shadow-lg shadow-emerald-500/25 active:scale-95 transition disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none">
+                  <div class="flex items-center gap-2 text-base sm:text-lg">
+                    <i data-lucide="log-in" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
                     <span>VÀO CA</span>
                   </div>
-                  <span class="text-xs text-emerald-100 font-normal mt-1">Bắt đầu ngày làm việc</span>
+                  <span class="text-[11px] text-emerald-100 font-normal mt-0.5">Bắt đầu làm việc</span>
                 </button>
 
-                <button id="btn-checkout" onclick="processAttendance('OUT')" class="group relative overflow-hidden flex flex-col items-center justify-center p-4 sm:p-5 rounded-xl bg-gradient-to-b from-rose-500 to-rose-600 text-white font-bold shadow-lg shadow-rose-500/25 hover:from-rose-600 hover:to-rose-700 active:scale-[0.98] transition disabled:opacity-50 disabled:pointer-events-none disabled:shadow-none">
-                  <div class="flex items-center gap-2 text-lg sm:text-xl">
-                    <i data-lucide="log-out" class="w-6 h-6 transition-transform group-hover:translate-x-1"></i>
+                <button id="btn-punch-out" onclick="submitAttendance('OUT')" class="group flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-bold shadow-lg shadow-rose-500/25 active:scale-95 transition disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none">
+                  <div class="flex items-center gap-2 text-base sm:text-lg">
+                    <i data-lucide="log-out" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
                     <span>RA CA</span>
                   </div>
-                  <span class="text-xs text-rose-100 font-normal mt-1">Kết thúc ngày làm việc</span>
+                  <span class="text-[11px] text-rose-100 font-normal mt-0.5">Kết thúc ngày làm</span>
                 </button>
               </div>
 
-              <!-- Demo mode toggle button for testing without local wifi -->
-              <div class="pt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
-                <div class="flex items-center gap-2">
-                  <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500"></i>
-                  <span>Chế độ kiểm tra Wi-Fi nội bộ đang bật.</span>
-                </div>
-                <button onclick="toggleBypassDemo()" id="btn-bypass-demo" class="text-blue-600 hover:underline font-medium">
-                  Bật chế độ thử nghiệm (Bỏ qua IP)
-                </button>
+              <!-- Thẻ hướng dẫn nhanh -->
+              <div class="pt-3 text-[11px] text-slate-500 text-center border-t border-slate-100 flex items-center justify-center gap-1.5">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <span>Chế độ xác thực địa chỉ IP chống gian lận đang kích hoạt.</span>
               </div>
 
             </div>
           </div>
         </div>
 
-        <!-- Right: Realtime Personal History for today -->
+        <!-- Cột Phải: Lịch sử điểm danh hôm nay của cả đội -->
         <div class="lg:col-span-5 space-y-6">
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100">
               <div class="flex items-center gap-2">
-                <i data-lucide="history" class="w-5 h-5 text-blue-600"></i>
-                <h2 class="font-bold text-slate-900">Lịch Sử Hôm Nay</h2>
+                <i data-lucide="clock-arrow-up" class="w-5 h-5 text-blue-600"></i>
+                <h2 class="font-bold text-slate-900 text-sm sm:text-base">Lượt Quẹt Hôm Nay</h2>
               </div>
-              <span id="today-records-count" class="text-xs px-2.5 py-1 font-semibold rounded-full bg-slate-100 text-slate-600">0 lượt</span>
+              <span id="today-punch-count" class="text-xs px-2.5 py-0.5 font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                0 lượt
+              </span>
             </div>
 
-            <div id="today-logs-container" class="mt-4 space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-              <!-- Logs dynamically generated here -->
-              <p class="text-center py-8 text-sm text-slate-400">Chưa có lượt điểm danh nào trong hôm nay.</p>
-            </div>
-          </div>
-
-          <!-- Quick Tip Card -->
-          <div class="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4 text-xs text-blue-900">
-            <div class="flex items-start gap-2.5">
-              <i data-lucide="lightbulb" class="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5"></i>
-              <div>
-                <p class="font-semibold text-blue-800">Quy tắc chấm công tự động:</p>
-                <p class="mt-1 leading-relaxed text-blue-900/90">
-                  Hệ thống tự động lấy lượt <b>Vào đầu tiên</b> và <b>Ra cuối cùng</b> trong ngày để tính số giờ công thực tế. Nếu vào sau 08:30 sáng sẽ được đánh dấu đi trễ.
-                </p>
-              </div>
+            <div id="today-punch-list" class="mt-4 space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+              <!-- Rendered via JS -->
             </div>
           </div>
         </div>
@@ -251,114 +246,95 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 2: TIMESHEET & REPORTS ==================== -->
-    <section id="section-timesheet" class="hidden space-y-6">
+    <!-- ========================================== -->
+    <!-- TAB 2: BẢNG TỔNG HỢP CÔNG THÁNG (ADMIN)    -->
+    <!-- ========================================== -->
+    <section id="tab-view-timesheet" class="hidden space-y-6">
       
-      <!-- Top Filters & Export Action Card -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6">
-        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <!-- Top Action Bar & Export -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 sm:p-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <i data-lucide="file-spreadsheet" class="w-6 h-6 text-emerald-600"></i>
-              Bảng Tổng Hợp Chấm Công Cuối Tháng
-            </h2>
+            <div class="flex items-center gap-2">
+              <h2 class="text-xl font-bold text-slate-900">Bảng Tổng Hợp Chấm Công</h2>
+              <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Admin Area</span>
+            </div>
             <p class="text-xs sm:text-sm text-slate-500 mt-1">
-              Dữ liệu được tự động tính toán giờ làm, đi trễ, về sớm sẵn sàng xuất file Excel/CSV.
+              Tự động gom giờ Vào đầu tiên & Giờ Ra cuối cùng trong ngày để tính giờ làm và đi trễ.
             </p>
           </div>
 
-          <!-- Export Actions -->
-          <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            <button onclick="exportMonthlyReportCSV()" class="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md shadow-emerald-600/20 active:scale-95 transition">
+          <!-- Nút Xuất File Excel CSV -->
+          <div class="flex items-center gap-2">
+            <button onclick="exportExcelCSV()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md shadow-emerald-600/20 active:scale-95 transition">
               <i data-lucide="download" class="w-4 h-4"></i>
               <span>Xuất File Excel (.CSV)</span>
             </button>
-            <button onclick="printTimesheet()" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition">
+            <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition">
               <i data-lucide="printer" class="w-4 h-4"></i>
-              <span class="hidden sm:inline">In Bảng Công</span>
+              <span class="hidden sm:inline">In Bảng</span>
             </button>
           </div>
         </div>
 
-        <!-- Filter Controls -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-100">
+        <!-- Bộ Lọc Tháng & Nhân Sự -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-100">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Tháng / Năm:</label>
-            <input type="month" id="filter-month" onchange="renderTimesheetView()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Chọn Tháng / Năm:</label>
+            <input type="month" id="filter-month-input" onchange="renderTimesheetReport()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Lọc theo nhân viên:</label>
-            <select id="filter-employee" onchange="renderTimesheetView()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <select id="filter-emp-input" onchange="renderTimesheetReport()" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
               <option value="ALL">Tất cả nhân sự</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Chế độ xem:</label>
-            <select id="view-mode" onchange="toggleViewMode(this.value)" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              <option value="summary">Bảng Tổng Hợp Theo Ngày (Chuẩn Tính Lương)</option>
-              <option value="raw">Nhật Ký Quẹt Thẻ Chi Tiết (Raw Logs)</option>
-            </select>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Quy định giờ vào ca:</label>
+            <div class="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-3 py-2.5 rounded-xl flex items-center justify-between">
+              <span>Chuẩn đi muộn:</span>
+              <b class="text-slate-800 font-mono">Sau 08:30:00</b>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Quick KPI Stats -->
+      <!-- Thống kê nhanh KPI -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <p class="text-xs text-slate-500 font-medium">Tổng Công Ngày Làm</p>
-          <p id="kpi-total-shifts" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <p class="text-xs font-medium text-slate-500">Tổng Số Ca Làm</p>
+          <p id="kpi-shifts" class="text-2xl font-bold text-slate-900 mt-1">0</p>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <p class="text-xs text-slate-500 font-medium">Tổng Giờ Làm Việc</p>
-          <p id="kpi-total-hours" class="text-2xl font-bold text-blue-600 mt-1">0.0h</p>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <p class="text-xs font-medium text-slate-500">Tổng Giờ Làm Việc</p>
+          <p id="kpi-hours" class="text-2xl font-bold text-blue-600 mt-1">0.0h</p>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <p class="text-xs text-slate-500 font-medium">Lượt Đi Trễ (>08:30)</p>
-          <p id="kpi-late-count" class="text-2xl font-bold text-amber-600 mt-1">0</p>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <p class="text-xs font-medium text-slate-500">Số Lượt Đi Trễ</p>
+          <p id="kpi-late" class="text-2xl font-bold text-amber-600 mt-1">0</p>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <p class="text-xs text-slate-500 font-medium">Lượt Quên Check-out</p>
-          <p id="kpi-missing-out" class="text-2xl font-bold text-rose-600 mt-1">0</p>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <p class="text-xs font-medium text-slate-500">Quên Check-out</p>
+          <p id="kpi-missing" class="text-2xl font-bold text-rose-600 mt-1">0</p>
         </div>
       </div>
 
-      <!-- Table Section: Monthly Summary View -->
-      <div id="container-summary-table" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <!-- Bảng dữ liệu công -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs tracking-wider">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs">
               <tr>
                 <th class="py-3.5 px-4">Ngày</th>
                 <th class="py-3.5 px-4">Mã NV</th>
-                <th class="py-3.5 px-4">Họ Và Tên</th>
+                <th class="py-3.5 px-4">Tên Nhân Viên</th>
                 <th class="py-3.5 px-4 text-center">Giờ Vào (In)</th>
                 <th class="py-3.5 px-4 text-center">Giờ Ra (Out)</th>
                 <th class="py-3.5 px-4 text-center">Số Giờ Làm</th>
-                <th class="py-3.5 px-4 text-center">Tình Trạng</th>
+                <th class="py-3.5 px-4 text-center">Đánh Giá</th>
               </tr>
             </thead>
-            <tbody id="timesheet-summary-tbody" class="divide-y divide-slate-100 text-slate-700">
-              <!-- Rendered via JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Table Section: Raw Logs View -->
-      <div id="container-raw-table" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase text-xs tracking-wider">
-              <tr>
-                <th class="py-3.5 px-4">Thời Gian</th>
-                <th class="py-3.5 px-4">Mã NV</th>
-                <th class="py-3.5 px-4">Tên Nhân Viên</th>
-                <th class="py-3.5 px-4 text-center">Hành Động</th>
-                <th class="py-3.5 px-4 font-mono text-xs">IP Thực Hiện</th>
-                <th class="py-3.5 px-4">Ghi Chú</th>
-              </tr>
-            </thead>
-            <tbody id="timesheet-raw-tbody" class="divide-y divide-slate-100 text-slate-700">
+            <tbody id="timesheet-table-body" class="divide-y divide-slate-100 text-slate-700">
               <!-- Rendered via JS -->
             </tbody>
           </table>
@@ -367,88 +343,107 @@
 
     </section>
 
-    <!-- ==================== TAB 3: ADMIN & CONFIG & QR ==================== -->
-    <section id="section-admin" class="hidden space-y-6">
-      
+    <!-- ========================================== -->
+    <!-- TAB 3: CÀI ĐẶT IP, MÃ QR & NHÂN VIÊN (ADMIN)-->
+    <!-- ========================================== -->
+    <section id="tab-view-admin" class="hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- Left Column: Wi-Fi Setup & QR Code Generator -->
+        <!-- Cột Trái: Cài đặt IP & Mã QR -->
         <div class="lg:col-span-5 space-y-6">
           
-          <!-- Wi-Fi Configuration Card -->
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <!-- Cấu hình IP Wi-Fi -->
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center gap-2 pb-4 border-b border-slate-100">
               <i data-lucide="router" class="w-5 h-5 text-blue-600"></i>
-              <h2 class="font-bold text-slate-900">Cấu Hình Wi-Fi Điểm Danh</h2>
+              <h2 class="font-bold text-slate-900">Cấu Hình Wi-Fi Cho Phép</h2>
             </div>
 
-            <form onsubmit="saveWifiConfig(event)" class="mt-4 space-y-4">
+            <form onsubmit="handleSaveWifiConfig(event)" class="mt-4 space-y-4">
               <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Tên Điểm Bán / Văn Phòng:</label>
-                <input type="text" id="cfg-location-name" required class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Tên Điểm Bán / Quán:</label>
+                <input type="text" id="config-location-input" required class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
 
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">Tên Mạng Wi-Fi (SSID):</label>
-                <input type="text" id="cfg-wifi-ssid" required class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="VD: The Coffee House Staff">
+                <input type="text" id="config-ssid-input" required class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="VD: The Coffee House">
               </div>
 
               <div>
                 <div class="flex items-center justify-between mb-1">
-                  <label class="text-xs font-semibold text-slate-600">Địa chỉ Public IP của Router:</label>
-                  <button type="button" onclick="useCurrentIPAsTarget()" class="text-xs text-blue-600 hover:underline font-medium">
-                    + Lấy IP hiện tại này
+                  <label class="text-xs font-semibold text-slate-600">Địa chỉ Public IP Router Quán:</label>
+                  <button type="button" onclick="autoFillCurrentIP()" class="text-xs text-blue-600 hover:underline font-bold">
+                    + Điền IP hiện tại
                   </button>
                 </div>
-                <input type="text" id="cfg-allowed-ip" required class="w-full px-3 py-2 text-sm font-mono bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="VD: 113.161.45.67">
+                <input type="text" id="config-ip-input" required class="w-full px-3 py-2 text-sm font-mono bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="VD: 113.161.45.67">
                 <p class="text-[11px] text-slate-500 mt-1">
-                  Khi nhân viên bắt đúng Wi-Fi này, điện thoại sẽ gửi IP trùng khớp với IP trên.
+                  Chỉ khi nhân viên kết nối Wi-Fi có IP này thì mới điểm danh được.
                 </p>
               </div>
 
-              <button type="submit" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-sm shadow-sm transition">
-                Lưu Cấu Hình Mạng
+              <button type="submit" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-sm transition">
+                Lưu Thay Đổi Cấu Hình Wi-Fi
               </button>
             </form>
           </div>
 
-          <!-- Printable QR Code Card -->
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center">
-            <div class="flex items-center justify-center gap-2 pb-3 border-b border-slate-100">
-              <i data-lucide="qr-code" class="w-5 h-5 text-indigo-600"></i>
-              <h2 class="font-bold text-slate-900">Mã QR Quẹt Điểm Danh</h2>
+          <!-- Đổi Mã PIN Admin -->
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <i data-lucide="key-round" class="w-5 h-5 text-indigo-600"></i>
+              <h2 class="font-bold text-slate-900">Đổi Mã PIN Quản Trị</h2>
             </div>
 
-            <p class="text-xs text-slate-500 mt-3 mb-4">
-              In mã QR này và dán tại cửa ra vào hoặc quầy thu ngân. Nhân viên dùng camera quét để mở link điểm danh.
+            <form onsubmit="handleChangePin(event)" class="mt-4 space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Mã PIN Mới (4-6 số):</label>
+                <input type="password" id="new-pin-input" maxlength="6" pattern="[0-9]{4,6}" required placeholder="VD: 9999" class="w-full px-3 py-2 text-sm font-mono bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+              <button type="submit" class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl transition">
+                Cập Nhật Mã PIN Mới
+              </button>
+            </form>
+          </div>
+
+          <!-- Tạo Biển Báo Mã QR Quán -->
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 text-center">
+            <div class="flex items-center justify-center gap-2 pb-3 border-b border-slate-100">
+              <i data-lucide="qr-code" class="w-5 h-5 text-indigo-600"></i>
+              <h2 class="font-bold text-slate-900">Mã QR Dán Tại Quầy</h2>
+            </div>
+
+            <p class="text-xs text-slate-500 mt-2 mb-3">
+              In mã này dán tại quầy để nhân viên quét mở trang điểm danh.
             </p>
 
             <div class="inline-block p-3 bg-white border-2 border-dashed border-slate-200 rounded-2xl shadow-inner">
-              <div id="qrcode-box" class="flex justify-center items-center w-[180px] h-[180px]"></div>
+              <div id="qr-dest-canvas" class="flex justify-center items-center w-[170px] h-[170px]"></div>
             </div>
 
-            <div class="mt-4 flex gap-2 justify-center">
-              <button onclick="printQRCodeCard()" class="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition">
-                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                In Biển Báo Điểm Danh
+            <div class="mt-4">
+              <button onclick="printQRPrefabCard()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 transition">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                In Biển Chấm Công A4/A5
               </button>
             </div>
           </div>
 
         </div>
 
-        <!-- Right Column: Employee Management & Data Reset -->
+        <!-- Cột Phải: Quản lý Danh Sách Nhân Viên & Dữ Liệu -->
         <div class="lg:col-span-7 space-y-6">
 
-          <!-- Staff Directory -->
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+          <!-- Danh sách nhân viên -->
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100">
               <div class="flex items-center gap-2">
                 <i data-lucide="users" class="w-5 h-5 text-blue-600"></i>
-                <h2 class="font-bold text-slate-900">Danh Sách Nhân Viên</h2>
+                <h2 class="font-bold text-slate-900">Danh Sách Nhân Sự</h2>
               </div>
-              <button onclick="openAddEmployeeModal()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition">
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <button onclick="openModalAddStaff()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1 transition">
+                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
                 Thêm Nhân Viên
               </button>
             </div>
@@ -460,31 +455,31 @@
                     <th class="py-2.5 px-3">Mã NV</th>
                     <th class="py-2.5 px-3">Họ Tên</th>
                     <th class="py-2.5 px-3">Bộ Phận / Vị trí</th>
-                    <th class="py-2.5 px-3 text-right">Thao Tác</th>
+                    <th class="py-2.5 px-3 text-right">Xóa</th>
                   </tr>
                 </thead>
-                <tbody id="employee-list-tbody" class="divide-y divide-slate-100 text-slate-700">
+                <tbody id="staff-admin-tbody" class="divide-y divide-slate-100 text-slate-700">
                   <!-- Rendered via JS -->
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- Danger Zone: Reset Data -->
-          <div class="bg-rose-50/50 border border-rose-200 rounded-2xl p-5">
-            <h3 class="text-sm font-bold text-rose-800 flex items-center gap-2">
-              <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i>
-              Quản Trị Dữ Liệu Lưu Trữ (LocalStorage)
+          <!-- Khu Vực Thử Nghiệm & Xóa Dữ Liệu -->
+          <div class="bg-amber-50/60 border border-amber-200/80 rounded-3xl p-5">
+            <h3 class="text-sm font-bold text-amber-900 flex items-center gap-2">
+              <i data-lucide="database" class="w-4 h-4 text-amber-600"></i>
+              Công Cụ Thử Nghiệm & Dữ Liệu Demo
             </h3>
-            <p class="text-xs text-rose-700 mt-1 leading-relaxed">
-              Mọi dữ liệu được lưu trên trình duyệt của bạn. Bạn có thể nạp dữ liệu mẫu để thử nghiệm tính năng hoặc xóa toàn bộ lịch sử.
+            <p class="text-xs text-amber-800 mt-1 leading-relaxed">
+              Bạn có thể nạp sẵn 10 ngày dữ liệu mẫu để kiểm tra tính năng tính công và xuất file Excel ngay lập tức.
             </p>
             <div class="mt-3 flex flex-wrap gap-2">
-              <button onclick="loadSampleData()" class="px-3 py-1.5 bg-white border border-rose-300 text-rose-700 rounded-lg text-xs font-semibold hover:bg-rose-50 transition">
-                Nạp Dữ Liệu Mẫu Tháng Này
+              <button onclick="seedDemoAttendanceData()" class="px-3.5 py-1.5 bg-white border border-amber-300 text-amber-900 rounded-xl text-xs font-semibold hover:bg-amber-100/50 transition">
+                Nạp Dữ Liệu Điểm Danh Mẫu
               </button>
-              <button onclick="clearAllData()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition">
-                Xóa Hết Lịch Sử Quét
+              <button onclick="clearAllAttendanceLogs()" class="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition">
+                Xóa Sạch Lịch Sử Quẹt Thẻ
               </button>
             </div>
           </div>
@@ -492,329 +487,284 @@
         </div>
 
       </div>
-
     </section>
 
   </main>
 
-  <!-- Add Employee Modal Dialog -->
-  <div id="modal-employee" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 class="font-bold text-slate-900 text-base">Thêm Nhân Viên Mới</h3>
-        <button onclick="closeAddEmployeeModal()" class="text-slate-400 hover:text-slate-600 p-1">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+  <div id="modal-admin-pin" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="shield-check" class="w-6 h-6"></i>
       </div>
+      <h3 class="font-bold text-slate-900 text-lg">Xác Thực Quản Lý</h3>
+      <p class="text-xs text-slate-500 mt-1">
+        Vui lòng nhập mã PIN bảo mật để mở khu vực Cài đặt và Bảng công (Mặc định: <code class="font-mono text-blue-600 font-bold">8888</code>).
+      </p>
 
-      <form onsubmit="saveEmployee(event)" class="mt-4 space-y-3.5">
+      <form onsubmit="submitAdminPinForm(event)" class="mt-5 space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Mã Nhân Viên (ID):</label>
-          <input type="text" id="emp-code" required placeholder="VD: NV01, NV02" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Họ Và Tên:</label>
-          <input type="text" id="emp-name" required placeholder="VD: Nguyễn Văn A" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Bộ Phận / Chức Vụ:</label>
-          <input type="text" id="emp-dept" required placeholder="VD: Phục vụ, Thu ngân, Bếp..." class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Số Điện Thoại:</label>
-          <input type="tel" id="emp-phone" placeholder="VD: 0987654321" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <input type="password" id="input-pin-attempt" maxlength="6" pattern="[0-9]*" inputmode="numeric" required placeholder="••••" 
+            class="w-40 mx-auto text-center tracking-[0.5em] text-2xl font-mono py-2.5 bg-slate-50 border-2 border-slate-300 focus:border-blue-600 rounded-2xl focus:outline-none">
         </div>
 
-        <div class="pt-2 flex justify-end gap-2">
-          <button type="button" onclick="closeAddEmployeeModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition">Hủy</button>
-          <button type="submit" class="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">Lưu Nhân Viên</button>
+        <div class="flex gap-2 justify-center pt-2">
+          <button type="button" onclick="closeAdminPinModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">
+            Hủy Bỏ
+          </button>
+          <button type="submit" class="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-500/20 transition">
+            Đăng Nhập
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Custom Floating Toast Message Component -->
-  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <div id="modal-add-staff" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900 text-base">Thêm Nhân Sự Mới</h3>
+        <button onclick="closeModalAddStaff()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveNewStaff(event)" class="mt-4 space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Mã Nhân Viên:</label>
+          <input type="text" id="staff-code" required placeholder="VD: NV01, NV02..." class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl uppercase">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Họ Và Tên:</label>
+          <input type="text" id="staff-name" required placeholder="VD: Nguyễn Văn A" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Chức Vụ / Bộ Phận:</label>
+          <input type="text" id="staff-dept" required placeholder="VD: Thu ngân, Bán hàng..." class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl">
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeModalAddStaff()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Hủy</button>
+          <button type="submit" class="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl">Thêm Mới</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-wrapper" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
   <script>
-    /* Global Storage Keys */
-    const STORAGE_KEYS = {
-      CONFIG: 'wifi_attendance_config',
-      EMPLOYEES: 'wifi_attendance_employees',
-      LOGS: 'wifi_attendance_logs',
-      DEMO_BYPASS: 'wifi_attendance_demo_bypass'
+    /* Keys for persistence */
+    const STORAGE_KEY = {
+      CONFIG: 'sw_wifi_config_v2',
+      STAFF: 'sw_wifi_staff_v2',
+      LOGS: 'sw_wifi_logs_v2',
+      ADMIN_PIN: 'sw_wifi_pin_v2',
+      ADMIN_AUTH: 'sw_wifi_auth_session'
     };
 
-    /* Default Configuration */
+    /* Defaults */
     const DEFAULT_CONFIG = {
-      locationName: 'Cơ Sở 1 - Trụ Sở Chính',
-      ssid: 'CongTy_NhanVien_5G',
-      allowedIP: '113.161.45.67'
+      locationName: 'Cơ Sở 1 - Quán Cà Phê / Cửa Hàng',
+      ssid: 'Wifi_Quan_Chinh',
+      allowedIp: '113.161.45.67'
     };
 
-    /* Initial Sample Employees */
-    const INITIAL_EMPLOYEES = [
-      { id: 'NV01', name: 'Trần Thị Thu Hà', dept: 'Thu ngân / Bán hàng', phone: '0901234567' },
-      { id: 'NV02', name: 'Nguyễn Văn Minh', dept: 'Kỹ thuật / IT', phone: '0912345678' },
-      { id: 'NV03', name: 'Lê Hoàng Nam', dept: 'Pha chế / Barista', phone: '0933445566' },
-      { id: 'NV04', name: 'Phạm Quỳnh Anh', dept: 'Quản lý ca', phone: '0988776655' }
+    const DEFAULT_STAFF = [
+      { id: 'NV01', name: 'Nguyễn Thị Mai', dept: 'Thu ngân / Pha chế' },
+      { id: 'NV02', name: 'Trần Văn Bình', dept: 'Phục vụ / Bán hàng' },
+      { id: 'NV03', name: 'Lê Hoàng Long', dept: 'Quản lý ca' }
     ];
 
-    /* Runtime State Variables */
+    /* Runtime State */
     let appConfig = null;
-    let employees = [];
+    let staffList = [];
     let attendanceLogs = [];
-    let currentDetectedIP = null;
-    let isBypassDemo = false;
-    let isNetworkValid = false;
+    let adminPin = '8888';
+    let isAdminLoggedIn = false;
+    let detectedClientIP = '';
+    let currentActiveTab = 'checkin';
+    let pendingProtectedTab = null;
 
+    /* Initialize Application on DOM Ready */
     document.addEventListener('DOMContentLoaded', () => {
-      // 1. Initialize Lucide icons
       lucide.createIcons();
-
-      // 2. Load LocalStorage Data
-      loadStateFromStorage();
-
-      // 3. Initialize Clock & Filters
-      startRealtimeClock();
-      initializeFilterDates();
-
-      // 4. Populate UI Elements
-      renderEmployeeSelectDropdown();
-      renderEmployeeTable();
-      renderTodayLogs();
-      renderTimesheetView();
-      populateConfigInputs();
-      generateQRCode();
-
-      // 5. Fetch Public IP
-      detectUserIP();
+      loadStoredData();
+      startDigitalClock();
+      setupDateFilter();
+      renderAllViews();
+      detectClientIP();
     });
 
-    function loadStateFromStorage() {
-      // Load configuration
-      const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
+    function loadStoredData() {
+      // Config
+      const savedConfig = localStorage.getItem(STORAGE_KEY.CONFIG);
       appConfig = savedConfig ? JSON.parse(savedConfig) : { ...DEFAULT_CONFIG };
 
-      // Load employees
-      const savedEmployees = localStorage.getItem(STORAGE_KEYS.EMPLOYEES);
-      employees = savedEmployees ? JSON.parse(savedEmployees) : [...INITIAL_EMPLOYEES];
-      if (!savedEmployees) saveEmployeesToStorage();
+      // Staff
+      const savedStaff = localStorage.getItem(STORAGE_KEY.STAFF);
+      staffList = savedStaff ? JSON.parse(savedStaff) : [...DEFAULT_STAFF];
+      if (!savedStaff) localStorage.setItem(STORAGE_KEY.STAFF, JSON.stringify(staffList));
 
-      // Load logs
-      const savedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
+      // Attendance logs
+      const savedLogs = localStorage.getItem(STORAGE_KEY.LOGS);
       attendanceLogs = savedLogs ? JSON.parse(savedLogs) : [];
 
-      // Load bypass demo state
-      isBypassDemo = localStorage.getItem(STORAGE_KEYS.DEMO_BYPASS) === 'true';
-      updateDemoButtonState();
+      // Admin PIN
+      const savedPin = localStorage.getItem(STORAGE_KEY.ADMIN_PIN);
+      adminPin = savedPin || '8888';
+
+      // Admin Session (in sessionStorage or check memory)
+      isAdminLoggedIn = sessionStorage.getItem(STORAGE_KEY.ADMIN_AUTH) === 'true';
+      updateAdminAuthUI();
     }
 
-    function saveEmployeesToStorage() {
-      localStorage.setItem(STORAGE_KEYS.EMPLOYEES, JSON.stringify(employees));
+    function saveConfig() {
+      localStorage.setItem(STORAGE_KEY.CONFIG, JSON.stringify(appConfig));
     }
 
-    function saveLogsToStorage() {
-      localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(attendanceLogs));
+    function saveStaff() {
+      localStorage.setItem(STORAGE_KEY.STAFF, JSON.stringify(staffList));
     }
 
-    function saveConfigToStorage() {
-      localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(appConfig));
+    function saveLogs() {
+      localStorage.setItem(STORAGE_KEY.LOGS, JSON.stringify(attendanceLogs));
     }
 
-    function startRealtimeClock() {
-      const liveTimeEl = document.getElementById('live-time');
-      const liveDateEl = document.getElementById('live-date');
+    function startDigitalClock() {
+      const timeEl = document.getElementById('live-clock-time');
+      const dateEl = document.getElementById('live-clock-date');
 
       function update() {
         const now = new Date();
-        // Time format HH:mm:ss
-        liveTimeEl.textContent = now.toLocaleTimeString('vi-VN', { hour12: false });
-        
-        // Date format
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        liveDateEl.textContent = now.toLocaleDateString('vi-VN', options);
+        timeEl.textContent = now.toLocaleTimeString('vi-VN', { hour12: false });
+        dateEl.textContent = now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       }
-
       update();
       setInterval(update, 1000);
     }
 
-    function initializeFilterDates() {
+    function setupDateFilter() {
       const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      document.getElementById('filter-month').value = `${year}-${month}`;
+      const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      document.getElementById('filter-month-input').value = monthStr;
     }
 
-    async function detectUserIP(isManualRefresh = false) {
-      const ipTextEl = document.getElementById('current-detected-ip');
-      const bannerEl = document.getElementById('ip-status-banner');
-      const indicatorEl = document.getElementById('ip-status-indicator');
-      const statusTextEl = document.getElementById('ip-status-text');
-
-      ipTextEl.textContent = 'Đang kiểm tra...';
+    async function detectClientIP(isManual = false) {
+      const ipLabel = document.getElementById('detected-ip-label');
+      ipLabel.textContent = 'Đang quét...';
 
       try {
-        // Fetch public IP through public reliable API
-        const response = await fetch('https://api.ipify.org?format=json');
-        if (!response.ok) throw new Error('Không thể kết nối API IP');
-        const data = await response.json();
-        currentDetectedIP = data.ip;
-        ipTextEl.textContent = currentDetectedIP;
-
-        verifyNetworkMatch();
-        if (isManualRefresh) {
-          showToast('Đã cập nhật địa chỉ IP thành công!', 'info');
-        }
+        const res = await fetch('https://api.ipify.org?format=json');
+        if (!res.ok) throw new Error('Network error');
+        const data = await res.json();
+        detectedClientIP = data.ip || '127.0.0.1';
+        ipLabel.textContent = detectedClientIP;
       } catch (err) {
         console.warn('Lỗi lấy IP:', err);
-        // Fallback or offline check
-        currentDetectedIP = 'Không xác định (Offline)';
-        ipTextEl.textContent = currentDetectedIP;
-        verifyNetworkMatch();
+        detectedClientIP = 'Chưa xác định (Offline)';
+        ipLabel.textContent = detectedClientIP;
       }
+
+      verifyWifiConnection();
+      if (isManual) showToast('Đã cập nhật IP mạng hiện tại!', 'info');
     }
 
-    function verifyNetworkMatch() {
-      const bannerEl = document.getElementById('ip-status-banner');
-      const indicatorEl = document.getElementById('ip-status-indicator');
-      const statusTextEl = document.getElementById('ip-status-text');
-      const gateAlert = document.getElementById('wifi-gate-alert');
-      const btnIn = document.getElementById('btn-checkin');
-      const btnOut = document.getElementById('btn-checkout');
+    function verifyWifiConnection() {
+      const banner = document.getElementById('ip-status-banner');
+      const dot = document.getElementById('ip-indicator-dot');
+      const msg = document.getElementById('ip-status-message');
+      const alertBox = document.getElementById('wrong-wifi-alert');
+      const btnIn = document.getElementById('btn-punch-in');
+      const btnOut = document.getElementById('btn-punch-out');
 
-      const reqWifiName = document.getElementById('required-wifi-name');
-      const reqIpView = document.getElementById('required-ip-view');
-      const activeLocName = document.getElementById('active-location-name');
+      document.getElementById('active-wifi-badge').textContent = `Wi-Fi Quán: ${appConfig.ssid}`;
+      document.getElementById('header-loc-name').textContent = appConfig.locationName;
+      document.getElementById('alert-req-ssid').textContent = `${appConfig.ssid} (IP: ${appConfig.allowedIp})`;
 
-      if (reqWifiName) reqWifiName.textContent = appConfig.ssid || 'Chưa đặt';
-      if (reqIpView) reqIpView.textContent = appConfig.allowedIP || 'Chưa đặt';
-      if (activeLocName) activeLocName.textContent = `Cơ sở: ${appConfig.locationName}`;
+      // Compare client IP with target allowed IP
+      const isMatched = detectedClientIP && (detectedClientIP.trim() === appConfig.allowedIp.trim());
 
-      // Check matching condition
-      const isIpMatched = currentDetectedIP && (currentDetectedIP.trim() === appConfig.allowedIP.trim());
-      isNetworkValid = isIpMatched || isBypassDemo;
-
-      if (isNetworkValid) {
-        // Network Valid
-        bannerEl.className = 'bg-emerald-50 border-b border-emerald-200 px-4 py-2.5 transition-all duration-300';
-        indicatorEl.innerHTML = `
+      if (isMatched) {
+        // Valid Wi-Fi connection
+        banner.className = 'bg-emerald-50 border-b border-emerald-200 px-4 py-2 transition-all';
+        dot.innerHTML = `
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
         `;
-        if (isBypassDemo && !isIpMatched) {
-          statusTextEl.className = 'font-semibold text-amber-800';
-          statusTextEl.textContent = '🧪 Đang bật Chế độ Demo: Đã mở khóa chấm công để thử nghiệm tính năng.';
-        } else {
-          statusTextEl.className = 'font-semibold text-emerald-800';
-          statusTextEl.textContent = `✓ Đã kết nối Wi-Fi hợp lệ (${appConfig.ssid}). Sẵn sàng điểm danh!`;
-        }
+        msg.className = 'font-semibold text-emerald-800';
+        msg.textContent = `✓ Đã kết nối đúng Wi-Fi (${appConfig.ssid}). Sẵn sàng điểm danh!`;
 
-        gateAlert.classList.add('hidden');
+        alertBox.classList.add('hidden');
         btnIn.disabled = false;
         btnOut.disabled = false;
       } else {
-        // Network Invalid (Not in cafe/office wifi)
-        bannerEl.className = 'bg-rose-50 border-b border-rose-200 px-4 py-2.5 transition-all duration-300';
-        indicatorEl.innerHTML = `
-          <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
-        `;
-        statusTextEl.className = 'font-medium text-rose-800';
-        statusTextEl.textContent = '✕ Bạn đang dùng 4G hoặc Wi-Fi ngoài. Vui lòng bắt Wi-Fi nội bộ để điểm danh!';
+        // Invalid or external 4G
+        banner.className = 'bg-rose-50 border-b border-rose-200 px-4 py-2 transition-all';
+        dot.innerHTML = `<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>`;
+        msg.className = 'font-semibold text-rose-800';
+        msg.textContent = '✕ Bạn chưa kết nối Wi-Fi quán! Vui lòng bắt Wi-Fi để mở khóa nút điểm danh.';
 
-        gateAlert.classList.remove('hidden');
+        alertBox.classList.remove('hidden');
         btnIn.disabled = true;
         btnOut.disabled = true;
       }
     }
 
-    function toggleBypassDemo() {
-      isBypassDemo = !isBypassDemo;
-      localStorage.setItem(STORAGE_KEYS.DEMO_BYPASS, isBypassDemo.toString());
-      updateDemoButtonState();
-      verifyNetworkMatch();
+    function submitAttendance(type) {
+      const selectBox = document.getElementById('emp-select-box');
+      const empId = selectBox.value;
 
-      if (isBypassDemo) {
-        showToast('Đã kích hoạt chế độ Thử nghiệm: Bạn có thể chấm công tự do.', 'info');
-      } else {
-        showToast('Đã tắt chế độ Thử nghiệm: Bắt buộc kết nối đúng IP Wi-Fi.', 'info');
-      }
-    }
-
-    function updateDemoButtonState() {
-      const btn = document.getElementById('btn-bypass-demo');
-      if (btn) {
-        btn.textContent = isBypassDemo ? 'Tắt chế độ thử nghiệm (Khóa IP)' : 'Bật chế độ thử nghiệm (Bỏ qua IP)';
-        btn.className = isBypassDemo ? 'text-rose-600 hover:underline font-bold' : 'text-blue-600 hover:underline font-medium';
-      }
-    }
-
-    function processAttendance(type) {
-      if (!isNetworkValid) {
-        showToast('Lỗi: Bạn phải kết nối mạng Wi-Fi tại nơi làm việc!', 'error');
-        return;
-      }
-
-      const empSelect = document.getElementById('employee-select');
-      const empId = empSelect.value;
       if (!empId) {
-        showToast('Vui lòng chọn nhân viên trước khi điểm danh!', 'warning');
-        empSelect.focus();
+        showToast('Vui lòng chọn tên nhân viên trước khi bấm!', 'warning');
+        selectBox.focus();
         return;
       }
 
-      const employee = employees.find(e => e.id === empId);
-      if (!employee) {
-        showToast('Không tìm thấy thông tin nhân sự!', 'error');
-        return;
-      }
+      const staff = staffList.find(s => s.id === empId);
+      if (!staff) return;
 
-      const noteInput = document.getElementById('check-note');
-      const note = noteInput.value.trim();
+      const note = document.getElementById('emp-note-input').value.trim();
       const now = new Date();
 
-      // Create new Attendance Record
-      const newRecord = {
-        id: 'ATT_' + Date.now(),
+      const newLog = {
+        id: 'LOG_' + Date.now(),
         timestamp: now.toISOString(),
         dateStr: now.toISOString().split('T')[0], // YYYY-MM-DD
         timeStr: now.toLocaleTimeString('vi-VN', { hour12: false }), // HH:mm:ss
-        empId: employee.id,
-        empName: employee.name,
+        empId: staff.id,
+        empName: staff.name,
         type: type, // 'IN' or 'OUT'
-        ip: currentDetectedIP || 'Unknown',
-        ssid: appConfig.ssid,
+        ip: detectedClientIP,
         note: note
       };
 
-      attendanceLogs.unshift(newRecord);
-      saveLogsToStorage();
+      attendanceLogs.unshift(newLog);
+      saveLogs();
 
       // Clear note
-      noteInput.value = '';
+      document.getElementById('emp-note-input').value = '';
 
-      // Update Views
       renderTodayLogs();
-      renderTimesheetView();
+      if (isAdminLoggedIn) renderTimesheetReport();
 
       const typeLabel = type === 'IN' ? 'VÀO CA' : 'RA CA';
-      showToast(`Điểm danh ${typeLabel} thành công cho [${employee.name}] lúc ${newRecord.timeStr}!`, 'success');
+      showToast(`Điểm danh ${typeLabel} thành công cho [${staff.name}]!`, 'success');
     }
 
     function renderTodayLogs() {
-      const container = document.getElementById('today-logs-container');
-      const countBadge = document.getElementById('today-records-count');
+      const container = document.getElementById('today-punch-list');
+      const countEl = document.getElementById('today-punch-count');
       const today = new Date().toISOString().split('T')[0];
 
       const todayLogs = attendanceLogs.filter(log => log.dateStr === today);
-      countBadge.textContent = `${todayLogs.length} lượt`;
+      countEl.textContent = `${todayLogs.length} lượt`;
 
       if (todayLogs.length === 0) {
         container.innerHTML = `
           <div class="py-8 text-center text-slate-400">
-            <i data-lucide="calendar-clock" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
-            <p class="text-sm">Chưa có lượt điểm danh nào trong hôm nay.</p>
+            <i data-lucide="calendar" class="w-8 h-8 mx-auto mb-1.5 opacity-30"></i>
+            <p class="text-xs">Chưa có lượt điểm danh nào trong ngày hôm nay.</p>
           </div>
         `;
         lucide.createIcons();
@@ -822,12 +772,12 @@
       }
 
       let html = '';
-      todayLogs.slice(0, 8).forEach(log => {
+      todayLogs.slice(0, 10).forEach(log => {
         const isIn = log.type === 'IN';
         html += `
-          <div class="flex items-center justify-between p-3 rounded-xl border ${isIn ? 'bg-emerald-50/40 border-emerald-100' : 'bg-rose-50/40 border-rose-100'} transition">
+          <div class="flex items-center justify-between p-3 rounded-2xl border ${isIn ? 'bg-emerald-50/50 border-emerald-100' : 'bg-rose-50/50 border-rose-100'}">
             <div class="flex items-center gap-3">
-              <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-xs ${isIn ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}">
+              <span class="w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center ${isIn ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}">
                 ${isIn ? 'IN' : 'OUT'}
               </span>
               <div>
@@ -844,20 +794,18 @@
       lucide.createIcons();
     }
 
-    function renderTimesheetView() {
-      const filterMonth = document.getElementById('filter-month').value; // Format: YYYY-MM
-      const filterEmp = document.getElementById('filter-employee').value;
+    function renderTimesheetReport() {
+      const month = document.getElementById('filter-month-input').value;
+      const empFilter = document.getElementById('filter-emp-input').value;
 
-      // Filter raw logs for selected month
-      let filteredLogs = attendanceLogs.filter(log => log.dateStr.startsWith(filterMonth));
-      if (filterEmp !== 'ALL') {
-        filteredLogs = filteredLogs.filter(log => log.empId === filterEmp);
+      let filtered = attendanceLogs.filter(log => log.dateStr.startsWith(month));
+      if (empFilter !== 'ALL') {
+        filtered = filtered.filter(log => log.empId === empFilter);
       }
 
-      // Group logs by Date + Employee
-      // Map key: `${log.dateStr}__${log.empId}`
+      // Group by Date + Staff
       const grouped = {};
-      filteredLogs.forEach(log => {
+      filtered.forEach(log => {
         const key = `${log.dateStr}__${log.empId}`;
         if (!grouped[key]) {
           grouped[key] = {
@@ -872,50 +820,42 @@
         else grouped[key].outs.push(log);
       });
 
-      // Calculate paired work shifts
       const summaryRows = [];
-      let totalWorkMinutes = 0;
+      let totalMinutes = 0;
       let lateCount = 0;
       let missingOutCount = 0;
 
       Object.values(grouped).forEach(item => {
-        // Sort chronologically
         item.ins.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
         item.outs.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
         const firstIn = item.ins[0] || null;
         const lastOut = item.outs.length > 0 ? item.outs[item.outs.length - 1] : null;
 
-        let hoursWorked = 0;
+        let hours = 0;
         let isLate = false;
-        let statusTag = '';
+        let badgeHtml = '';
 
-        if (firstIn) {
-          // Check if late (e.g. after 08:30:00)
-          const inTime = firstIn.timeStr;
-          if (inTime > '08:30:59') {
-            isLate = true;
-            lateCount++;
-          }
+        if (firstIn && firstIn.timeStr > '08:30:59') {
+          isLate = true;
+          lateCount++;
         }
 
         if (firstIn && lastOut) {
-          const inDate = new Date(firstIn.timestamp);
-          const outDate = new Date(lastOut.timestamp);
-          const diffMs = outDate - inDate;
+          const diffMs = new Date(lastOut.timestamp) - new Date(firstIn.timestamp);
           if (diffMs > 0) {
-            const minutes = Math.floor(diffMs / (1000 * 60));
-            totalWorkMinutes += minutes;
-            hoursWorked = (minutes / 60).toFixed(1);
+            const mins = Math.floor(diffMs / 60000);
+            totalMinutes += mins;
+            hours = (mins / 60).toFixed(1);
           }
-          statusTag = isLate 
+          badgeHtml = isLate 
             ? `<span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">Đi trễ</span>`
             : `<span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">Đúng giờ</span>`;
         } else if (firstIn && !lastOut) {
           missingOutCount++;
-          statusTag = `<span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-rose-100 text-rose-800">Chưa Check-out</span>`;
+          badgeHtml = `<span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-rose-100 text-rose-800">Chưa Out</span>`;
         } else {
-          statusTag = `<span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-800">Chỉ có Ra</span>`;
+          badgeHtml = `<span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-800">Chỉ có Ra</span>`;
         }
 
         summaryRows.push({
@@ -924,91 +864,57 @@
           empName: item.empName,
           firstIn: firstIn ? firstIn.timeStr : '--:--',
           lastOut: lastOut ? lastOut.timeStr : '--:--',
-          hoursWorked: hoursWorked,
+          hours: hours,
           isLate: isLate,
-          statusTag: statusTag
+          badgeHtml: badgeHtml
         });
       });
 
-      // Sort summary by date desc
+      // Sort descending
       summaryRows.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
 
-      // Update KPI widgets
-      document.getElementById('kpi-total-shifts').textContent = summaryRows.length;
-      document.getElementById('kpi-total-hours').textContent = `${(totalWorkMinutes / 60).toFixed(1)}h`;
-      document.getElementById('kpi-late-count').textContent = lateCount;
-      document.getElementById('kpi-missing-out').textContent = missingOutCount;
+      // Update KPI
+      document.getElementById('kpi-shifts').textContent = summaryRows.length;
+      document.getElementById('kpi-hours').textContent = `${(totalMinutes / 60).toFixed(1)}h`;
+      document.getElementById('kpi-late').textContent = lateCount;
+      document.getElementById('kpi-missing').textContent = missingOutCount;
 
-      // Render Summary Table
-      const summaryTbody = document.getElementById('timesheet-summary-tbody');
+      // Render table
+      const tbody = document.getElementById('timesheet-table-body');
       if (summaryRows.length === 0) {
-        summaryTbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 text-sm">Không có dữ liệu chấm công cho tháng được chọn.</td></tr>`;
-      } else {
-        summaryTbody.innerHTML = summaryRows.map(row => `
-          <tr class="hover:bg-slate-50/80 transition">
-            <td class="py-3 px-4 font-mono font-medium text-slate-900">${row.dateStr}</td>
-            <td class="py-3 px-4 font-semibold text-blue-600">${row.empId}</td>
-            <td class="py-3 px-4 font-medium text-slate-900">${row.empName}</td>
-            <td class="py-3 px-4 text-center font-mono font-semibold ${row.isLate ? 'text-amber-600' : 'text-slate-700'}">${row.firstIn}</td>
-            <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700">${row.lastOut}</td>
-            <td class="py-3 px-4 text-center font-bold text-slate-900">${row.hoursWorked > 0 ? row.hoursWorked + ' h' : '--'}</td>
-            <td class="py-3 px-4 text-center">${row.statusTag}</td>
-          </tr>
-        `).join('');
-      }
-
-      // Render Raw Logs Table
-      const rawTbody = document.getElementById('timesheet-raw-tbody');
-      if (filteredLogs.length === 0) {
-        rawTbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 text-sm">Không có bản ghi quẹt thẻ nào.</td></tr>`;
-      } else {
-        rawTbody.innerHTML = filteredLogs.map(log => `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="py-3 px-4 font-mono text-xs">${log.timestamp.replace('T', ' ').slice(0, 19)}</td>
-            <td class="py-3 px-4 font-semibold text-slate-700">${log.empId}</td>
-            <td class="py-3 px-4 font-medium text-slate-900">${log.empName}</td>
-            <td class="py-3 px-4 text-center">
-              <span class="inline-flex px-2 py-0.5 rounded text-xs font-bold ${log.type === 'IN' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
-                ${log.type === 'IN' ? 'VÀO CA' : 'RA CA'}
-              </span>
-            </td>
-            <td class="py-3 px-4 font-mono text-xs text-slate-500">${log.ip}</td>
-            <td class="py-3 px-4 text-xs text-slate-500">${log.note || '-'}</td>
-          </tr>
-        `).join('');
-      }
-    }
-
-    function toggleViewMode(mode) {
-      const summaryTable = document.getElementById('container-summary-table');
-      const rawTable = document.getElementById('container-raw-table');
-
-      if (mode === 'summary') {
-        summaryTable.classList.remove('hidden');
-        rawTable.classList.add('hidden');
-      } else {
-        summaryTable.classList.add('hidden');
-        rawTable.classList.remove('hidden');
-      }
-    }
-
-    function exportMonthlyReportCSV() {
-      const filterMonth = document.getElementById('filter-month').value; // YYYY-MM
-      const filterEmp = document.getElementById('filter-employee').value;
-
-      let filteredLogs = attendanceLogs.filter(log => log.dateStr.startsWith(filterMonth));
-      if (filterEmp !== 'ALL') {
-        filteredLogs = filteredLogs.filter(log => log.empId === filterEmp);
-      }
-
-      if (filteredLogs.length === 0) {
-        showToast('Không có dữ liệu trong tháng để xuất file!', 'warning');
+        tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 text-xs">Không có dữ liệu trong tháng này.</td></tr>`;
         return;
       }
 
-      // Group logs to calculate hours
+      tbody.innerHTML = summaryRows.map(r => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-4 font-mono font-medium text-slate-900">${r.dateStr}</td>
+          <td class="py-3 px-4 font-bold text-blue-600">${r.empId}</td>
+          <td class="py-3 px-4 font-medium text-slate-900">${r.empName}</td>
+          <td class="py-3 px-4 text-center font-mono font-semibold ${r.isLate ? 'text-amber-600 font-bold' : 'text-slate-700'}">${r.firstIn}</td>
+          <td class="py-3 px-4 text-center font-mono font-semibold text-slate-700">${r.lastOut}</td>
+          <td class="py-3 px-4 text-center font-bold text-slate-900">${r.hours > 0 ? r.hours + ' h' : '--'}</td>
+          <td class="py-3 px-4 text-center">${r.badgeHtml}</td>
+        </tr>
+      `).join('');
+    }
+
+    function exportExcelCSV() {
+      const month = document.getElementById('filter-month-input').value;
+      const empFilter = document.getElementById('filter-emp-input').value;
+
+      let filtered = attendanceLogs.filter(log => log.dateStr.startsWith(month));
+      if (empFilter !== 'ALL') {
+        filtered = filtered.filter(log => log.empId === empFilter);
+      }
+
+      if (filtered.length === 0) {
+        showToast('Không có dữ liệu trong tháng để xuất!', 'warning');
+        return;
+      }
+
       const grouped = {};
-      filteredLogs.forEach(log => {
+      filtered.forEach(log => {
         const key = `${log.dateStr}__${log.empId}`;
         if (!grouped[key]) {
           grouped[key] = {
@@ -1023,19 +929,9 @@
         else grouped[key].outs.push(log);
       });
 
-      // Prepare CSV lines
-      const csvHeader = [
-        'Ngày',
-        'Mã Nhân Viên',
-        'Họ Và Tên',
-        'Giờ Vào (Check-in)',
-        'Giờ Ra (Check-out)',
-        'Số Giờ Làm (Giờ)',
-        'Tình Trạng',
-        'Địa Điểm / Cơ Sở'
+      const csvRows = [
+        ['Ngày', 'Mã Nhân Viên', 'Họ Và Tên', 'Giờ Vào (In)', 'Giờ Ra (Out)', 'Tổng Giờ Làm (h)', 'Trạng Thái', 'Địa Điểm'].join(',')
       ];
-
-      const csvRows = [csvHeader.join(',')];
 
       Object.values(grouped).forEach(item => {
         item.ins.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
@@ -1044,88 +940,192 @@
         const firstIn = item.ins[0] || null;
         const lastOut = item.outs.length > 0 ? item.outs[item.outs.length - 1] : null;
 
-        let hoursWorked = 0;
-        let isLate = false;
+        let hours = '0';
         let status = 'Bình thường';
 
-        if (firstIn && firstIn.timeStr > '08:30:59') {
-          isLate = true;
-          status = 'Đi trễ';
-        }
+        if (firstIn && firstIn.timeStr > '08:30:59') status = 'Đi trễ';
 
         if (firstIn && lastOut) {
           const diffMs = new Date(lastOut.timestamp) - new Date(firstIn.timestamp);
-          if (diffMs > 0) {
-            hoursWorked = (diffMs / (1000 * 60 * 60)).toFixed(2);
-          }
+          if (diffMs > 0) hours = (diffMs / 3600000).toFixed(2);
         } else if (firstIn && !lastOut) {
-          status = 'Thiếu Check-out';
+          status = 'Chưa Check-out';
         }
 
-        const row = [
+        const line = [
           `"${item.dateStr}"`,
           `"${item.empId}"`,
           `"${item.empName.replace(/"/g, '""')}"`,
           `"${firstIn ? firstIn.timeStr : ''}"`,
           `"${lastOut ? lastOut.timeStr : ''}"`,
-          `"${hoursWorked}"`,
+          `"${hours}"`,
           `"${status}"`,
           `"${appConfig.locationName.replace(/"/g, '""')}"`
         ];
-
-        csvRows.push(row.join(','));
+        csvRows.push(line.join(','));
       });
 
-      // Crucial: Prepend \uFEFF (UTF-8 BOM) so Excel opens Vietnamese characters correctly
-      const csvContent = '\uFEFF' + csvRows.join('\r\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
+      // UTF-8 BOM (\uFEFF) ensures Excel displays Vietnamese correctly
+      const csvData = '\uFEFF' + csvRows.join('\r\n');
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const downloadUrl = URL.createObjectURL(blob);
 
-      const downloadLink = document.createElement('a');
-      downloadLink.href = url;
-      downloadLink.setAttribute('download', `Bang_Cham_Cong_Thang_${filterMonth}_${appConfig.locationName.replace(/\s+/g, '_')}.csv`);
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(url);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `Bang_Cham_Cong_${month}_${appConfig.locationName.replace(/\s+/g, '_')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
 
-      showToast('Đã xuất file bảng công thành công!', 'success');
+      showToast('Đã xuất file bảng công Excel (.CSV) thành công!', 'success');
     }
 
-    function printTimesheet() {
-      window.print();
+    function toggleAdminAuthModal() {
+      if (isAdminLoggedIn) {
+        // Log out admin
+        isAdminLoggedIn = false;
+        sessionStorage.removeItem(STORAGE_KEY.ADMIN_AUTH);
+        updateAdminAuthUI();
+        switchTab('checkin');
+        showToast('Đã đăng xuất quyền Quản lý.', 'info');
+      } else {
+        openAdminPinModal();
+      }
     }
 
-    function renderEmployeeSelectDropdown() {
-      const select = document.getElementById('employee-select');
-      const filterSelect = document.getElementById('filter-employee');
+    function openAdminPinModal(targetTab = null) {
+      pendingProtectedTab = targetTab;
+      const modal = document.getElementById('modal-admin-pin');
+      const input = document.getElementById('input-pin-attempt');
+      input.value = '';
+      modal.classList.remove('hidden');
+      setTimeout(() => input.focus(), 100);
+    }
 
-      let optionsHtml = '<option value="">-- Vui lòng chọn tên nhân viên --</option>';
-      let filterOptionsHtml = '<option value="ALL">Tất cả nhân sự</option>';
+    function closeAdminPinModal() {
+      document.getElementById('modal-admin-pin').classList.add('hidden');
+      pendingProtectedTab = null;
+    }
 
-      employees.forEach(emp => {
-        optionsHtml += `<option value="${emp.id}">[${emp.id}] - ${emp.name} (${emp.dept})</option>`;
-        filterOptionsHtml += `<option value="${emp.id}">[${emp.id}] ${emp.name}</option>`;
+    function submitAdminPinForm(e) {
+      e.preventDefault();
+      const enteredPin = document.getElementById('input-pin-attempt').value.trim();
+
+      if (enteredPin === adminPin) {
+        isAdminLoggedIn = true;
+        sessionStorage.setItem(STORAGE_KEY.ADMIN_AUTH, 'true');
+        closeAdminPinModal();
+        updateAdminAuthUI();
+
+        showToast('Đăng nhập Quản trị viên thành công!', 'success');
+
+        if (pendingProtectedTab) {
+          switchTab(pendingProtectedTab);
+        } else {
+          switchTab('timesheet');
+        }
+      } else {
+        showToast('Sai mã PIN! Vui lòng thử lại.', 'error');
+        document.getElementById('input-pin-attempt').value = '';
+      }
+    }
+
+    function updateAdminAuthUI() {
+      const authLabel = document.getElementById('admin-auth-label');
+      const roleBadge = document.getElementById('role-badge');
+      const lockIcon = document.getElementById('admin-lock-icon');
+
+      if (isAdminLoggedIn) {
+        authLabel.textContent = 'Đăng Xuất';
+        roleBadge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300';
+        roleBadge.textContent = 'Admin ✓';
+        lockIcon.setAttribute('data-lucide', 'unlock');
+      } else {
+        authLabel.textContent = 'Quản Lý';
+        roleBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200';
+        roleBadge.textContent = 'Nhân viên';
+        lockIcon.setAttribute('data-lucide', 'lock');
+      }
+      lucide.createIcons();
+    }
+
+    function handleProtectedNav(targetTab) {
+      if (isAdminLoggedIn) {
+        switchTab(targetTab);
+      } else {
+        openAdminPinModal(targetTab);
+      }
+    }
+
+    function switchTab(tabKey) {
+      currentActiveTab = tabKey;
+      const tabs = ['checkin', 'timesheet', 'admin'];
+
+      tabs.forEach(t => {
+        const viewEl = document.getElementById(`tab-view-${t}`);
+        const navBtn = document.getElementById(`nav-btn-${t}`);
+
+        if (t === tabKey) {
+          viewEl.classList.remove('hidden');
+          if (navBtn) {
+            navBtn.className = 'flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 transition';
+          }
+        } else {
+          viewEl.classList.add('hidden');
+          if (navBtn) {
+            navBtn.className = 'hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition';
+          }
+        }
       });
 
-      select.innerHTML = optionsHtml;
-      filterSelect.innerHTML = filterOptionsHtml;
+      if (tabKey === 'timesheet') renderTimesheetReport();
+      lucide.createIcons();
     }
 
-    function renderEmployeeTable() {
-      const tbody = document.getElementById('employee-list-tbody');
-      if (employees.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400 text-xs">Chưa có nhân viên nào trong danh sách.</td></tr>`;
+    function renderAllViews() {
+      // Dropdown staff
+      const selectBox = document.getElementById('emp-select-box');
+      const filterSelect = document.getElementById('filter-emp-input');
+
+      let options = '<option value="">-- Bấm vào đây để chọn tên của bạn --</option>';
+      let filterOpts = '<option value="ALL">Tất cả nhân sự</option>';
+
+      staffList.forEach(s => {
+        options += `<option value="${s.id}">[${s.id}] - ${s.name} (${s.dept})</option>`;
+        filterOpts += `<option value="${s.id}">[${s.id}] ${s.name}</option>`;
+      });
+
+      selectBox.innerHTML = options;
+      filterSelect.innerHTML = filterOpts;
+
+      // Staff admin table
+      renderStaffTable();
+      renderTodayLogs();
+
+      // Config inputs
+      document.getElementById('config-location-input').value = appConfig.locationName;
+      document.getElementById('config-ssid-input').value = appConfig.ssid;
+      document.getElementById('config-ip-input').value = appConfig.allowedIp;
+
+      // QR Code
+      generateQRCode();
+    }
+
+    function renderStaffTable() {
+      const tbody = document.getElementById('staff-admin-tbody');
+      if (staffList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400 text-xs">Chưa có nhân viên nào.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = employees.map(emp => `
+      tbody.innerHTML = staffList.map(s => `
         <tr class="hover:bg-slate-50 transition">
-          <td class="py-2.5 px-3 font-mono font-bold text-blue-600">${emp.id}</td>
-          <td class="py-2.5 px-3 font-semibold text-slate-900">${emp.name}</td>
-          <td class="py-2.5 px-3 text-xs text-slate-600">${emp.dept}</td>
+          <td class="py-2.5 px-3 font-mono font-bold text-blue-600">${s.id}</td>
+          <td class="py-2.5 px-3 font-semibold text-slate-900">${s.name}</td>
+          <td class="py-2.5 px-3 text-xs text-slate-600">${s.dept}</td>
           <td class="py-2.5 px-3 text-right">
-            <button onclick="deleteEmployee('${emp.id}')" class="text-rose-600 hover:text-rose-800 text-xs font-medium p-1 transition" title="Xóa nhân viên">
+            <button onclick="deleteStaff('${s.id}')" class="text-rose-600 hover:text-rose-800 text-xs p-1" title="Xóa nhân viên">
               <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
           </td>
@@ -1134,272 +1134,232 @@
       lucide.createIcons();
     }
 
-    function openAddEmployeeModal() {
-      document.getElementById('modal-employee').classList.remove('hidden');
-      document.getElementById('emp-code').focus();
-    }
-
-    function closeAddEmployeeModal() {
-      document.getElementById('modal-employee').classList.add('hidden');
-    }
-
-    function saveEmployee(e) {
+    function handleSaveWifiConfig(e) {
       e.preventDefault();
-      const code = document.getElementById('emp-code').value.trim().toUpperCase();
-      const name = document.getElementById('emp-name').value.trim();
-      const dept = document.getElementById('emp-dept').value.trim();
-      const phone = document.getElementById('emp-phone').value.trim();
+      appConfig.locationName = document.getElementById('config-location-input').value.trim();
+      appConfig.ssid = document.getElementById('config-ssid-input').value.trim();
+      appConfig.allowedIp = document.getElementById('config-ip-input').value.trim();
 
-      if (employees.some(emp => emp.id === code)) {
-        showToast(`Mã nhân viên "${code}" đã tồn tại! Vui lòng chọn mã khác.`, 'warning');
+      saveConfig();
+      verifyWifiConnection();
+      showToast('Đã lưu cấu hình Wi-Fi mới thành công!', 'success');
+    }
+
+    function autoFillCurrentIP() {
+      if (!detectedClientIP || detectedClientIP.includes('Offline')) {
+        showToast('Chưa lấy được địa chỉ IP hiện tại của bạn!', 'warning');
         return;
       }
-
-      employees.push({ id: code, name, dept, phone });
-      saveEmployeesToStorage();
-
-      renderEmployeeSelectDropdown();
-      renderEmployeeTable();
-      closeAddEmployeeModal();
-
-      // Reset form
-      document.getElementById('emp-code').value = '';
-      document.getElementById('emp-name').value = '';
-      document.getElementById('emp-dept').value = '';
-      document.getElementById('emp-phone').value = '';
-
-      showToast(`Đã thêm nhân viên mới [${name}] thành công!`, 'success');
+      document.getElementById('config-ip-input').value = detectedClientIP;
+      showToast(`Đã lấy IP hiện tại (${detectedClientIP})!`, 'info');
     }
 
-    function deleteEmployee(empId) {
-      const emp = employees.find(e => e.id === empId);
-      if (!emp) return;
-
-      // Safe confirmation using standard UI modal / confirm replacement
-      if (!window.confirm(`Bạn có chắc chắn muốn xóa nhân viên ${emp.name} (${empId})?`)) {
-        return;
-      }
-
-      employees = employees.filter(e => e.id !== empId);
-      saveEmployeesToStorage();
-
-      renderEmployeeSelectDropdown();
-      renderEmployeeTable();
-      renderTimesheetView();
-
-      showToast(`Đã xóa nhân viên [${emp.name}] khỏi hệ thống.`, 'info');
-    }
-
-    function populateConfigInputs() {
-      document.getElementById('cfg-location-name').value = appConfig.locationName;
-      document.getElementById('cfg-wifi-ssid').value = appConfig.ssid;
-      document.getElementById('cfg-allowed-ip').value = appConfig.allowedIP;
-    }
-
-    function saveWifiConfig(e) {
+    function handleChangePin(e) {
       e.preventDefault();
-      appConfig.locationName = document.getElementById('cfg-location-name').value.trim();
-      appConfig.ssid = document.getElementById('cfg-wifi-ssid').value.trim();
-      appConfig.allowedIP = document.getElementById('cfg-allowed-ip').value.trim();
-
-      saveConfigToStorage();
-      verifyNetworkMatch();
-      showToast('Đã cập nhật thông số mạng Wi-Fi thành công!', 'success');
-    }
-
-    function useCurrentIPAsTarget() {
-      if (!currentDetectedIP || currentDetectedIP.includes('Offline')) {
-        showToast('Chưa lấy được IP hiện tại của thiết bị!', 'warning');
+      const newPin = document.getElementById('new-pin-input').value.trim();
+      if (newPin.length < 4) {
+        showToast('Mã PIN phải có từ 4 đến 6 chữ số!', 'warning');
         return;
       }
-      document.getElementById('cfg-allowed-ip').value = currentDetectedIP;
-      showToast(`Đã điền IP hiện tại (${currentDetectedIP}) vào ô cấu hình!`, 'info');
+
+      adminPin = newPin;
+      localStorage.setItem(STORAGE_KEY.ADMIN_PIN, adminPin);
+      document.getElementById('new-pin-input').value = '';
+      showToast(`Đã đổi mã PIN Admin thành [${newPin}] thành công!`, 'success');
+    }
+
+    function openModalAddStaff() {
+      document.getElementById('modal-add-staff').classList.remove('hidden');
+      document.getElementById('staff-code').focus();
+    }
+
+    function closeModalAddStaff() {
+      document.getElementById('modal-add-staff').classList.add('hidden');
+    }
+
+    function handleSaveNewStaff(e) {
+      e.preventDefault();
+      const id = document.getElementById('staff-code').value.trim().toUpperCase();
+      const name = document.getElementById('staff-name').value.trim();
+      const dept = document.getElementById('staff-dept').value.trim();
+
+      if (staffList.some(s => s.id === id)) {
+        showToast(`Mã nhân viên "${id}" đã tồn tại!`, 'warning');
+        return;
+      }
+
+      staffList.push({ id, name, dept });
+      saveStaff();
+
+      renderAllViews();
+      closeModalAddStaff();
+
+      document.getElementById('staff-code').value = '';
+      document.getElementById('staff-name').value = '';
+      document.getElementById('staff-dept').value = '';
+
+      showToast(`Đã thêm nhân viên [${name}] thành công!`, 'success');
+    }
+
+    function deleteStaff(id) {
+      const staff = staffList.find(s => s.id === id);
+      if (!staff) return;
+
+      if (!window.confirm(`Bạn có chắc muốn xóa nhân viên ${staff.name} (${id})?`)) return;
+
+      staffList = staffList.filter(s => s.id !== id);
+      saveStaff();
+      renderAllViews();
+      showToast(`Đã xóa nhân viên [${staff.name}]`, 'info');
     }
 
     function generateQRCode() {
-      const qrcodeBox = document.getElementById('qrcode-box');
-      qrcodeBox.innerHTML = '';
-
-      // Create QR Code containing current web app URL
-      const currentUrl = window.location.href;
-      new QRCode(qrcodeBox, {
-        text: currentUrl,
+      const box = document.getElementById('qr-dest-canvas');
+      box.innerHTML = '';
+      new QRCode(box, {
+        text: window.location.href,
         width: 170,
         height: 170,
-        colorDark: "#0f172a",
-        colorLight: "#ffffff",
+        colorDark: '#0f172a',
+        colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.M
       });
     }
 
-    function printQRCodeCard() {
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
+    function printQRPrefabCard() {
+      const win = window.open('', '_blank');
+      win.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Bảng Quét QR Điểm Danh - ${appConfig.locationName}</title>
+          <title>Mã QR Điểm Danh - ${appConfig.locationName}</title>
           <style>
             body { font-family: sans-serif; text-align: center; padding: 40px; margin: 0; }
-            .card { border: 4px solid #2563eb; border-radius: 24px; padding: 40px; max-width: 480px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-            h1 { font-size: 26px; color: #1e293b; margin-bottom: 5px; }
-            h2 { font-size: 18px; color: #2563eb; margin-top: 0; }
-            .box { margin: 30px auto; width: 220px; }
-            p { font-size: 15px; color: #475569; line-height: 1.5; }
-            .wifi-badge { background: #eff6ff; border: 1px solid #bfdbfe; padding: 8px 16px; border-radius: 12px; display: inline-block; font-weight: bold; color: #1d4ed8; }
+            .card { border: 4px solid #1d4ed8; border-radius: 24px; padding: 30px; max-width: 440px; margin: 0 auto; }
+            h1 { font-size: 24px; color: #0f172a; margin-bottom: 4px; }
+            h2 { font-size: 16px; color: #2563eb; margin-top: 0; }
+            .wifi-box { background: #eff6ff; border: 1px solid #bfdbfe; padding: 8px 16px; border-radius: 12px; font-weight: bold; color: #1e40af; margin-bottom: 20px; display: inline-block; }
+            .qr-box { margin: 20px auto; width: 220px; height: 220px; }
+            p { font-size: 14px; color: #475569; line-height: 1.5; }
           </style>
         </head>
         <body>
           <div class="card">
-            <h1>ĐIỂM DANH NHÂN VIÊN</h1>
+            <h1>ĐIỂM DANH NHÂN SỰ</h1>
             <h2>${appConfig.locationName}</h2>
-            <div class="wifi-badge">📶 Wi-Fi Yêu Cầu: ${appConfig.ssid}</div>
-            <div class="box" id="qr-dest"></div>
-            <p>1. Bật Wi-Fi và kết nối vào mạng <b>${appConfig.ssid}</b><br>
-               2. Dùng camera điện thoại quét mã QR bên trên<br>
-               3. Chọn tên bạn và bấm <b>VÀO CA / RA CA</b></p>
+            <div class="wifi-box">📶 Bắt Wi-Fi: ${appConfig.ssid}</div>
+            <div id="qr-target" class="qr-box"></div>
+            <p>
+              1. Kết nối điện thoại vào Wi-Fi <b>${appConfig.ssid}</b><br>
+              2. Quét mã QR bên trên để mở trang điểm danh<br>
+              3. Chọn tên bạn và bấm <b>VÀO CA / RA CA</b>
+            </p>
           </div>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
           <script>
-            new QRCode(document.getElementById('qr-dest'), {
+            new QRCode(document.getElementById('qr-target'), {
               text: "${window.location.href}",
               width: 220,
               height: 220
             });
-            setTimeout(() => { window.print(); }, 600);
+            setTimeout(() => window.print(), 500);
           <\/script>
         </body>
         </html>
       `);
-      printWindow.document.close();
+      win.document.close();
     }
 
-    function loadSampleData() {
+    function seedDemoAttendanceData() {
       const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-      
-      const sampleLogs = [];
-      const sampleDays = [1, 2, 3, 4, 5, 8, 9, 10, 11, 12]; // 10 representative working days
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const days = [1, 2, 3, 4, 5, 8, 9, 10, 11, 12];
+      const samples = [];
 
-      sampleDays.forEach(day => {
-        const dayStr = String(day).padStart(2, '0');
-        const dateStr = `${currentYear}-${currentMonth}-${dayStr}`;
+      days.forEach(d => {
+        const dStr = String(d).padStart(2, '0');
+        const dateStr = `${y}-${m}-${dStr}`;
 
-        employees.forEach(emp => {
-          // Slight randomness for arrival time
-          const isLate = Math.random() < 0.25;
-          const inHour = isLate ? '08' : '08';
-          const inMinute = isLate ? String(Math.floor(Math.random() * 20) + 31).padStart(2, '0') : String(Math.floor(Math.random() * 25) + 5).padStart(2, '0');
-          const inTime = `${inHour}:${inMinute}:12`;
-          
-          // Check-in record
-          sampleLogs.push({
+        staffList.forEach(s => {
+          const isLate = Math.random() < 0.2;
+          const inMin = isLate ? String(Math.floor(Math.random() * 20) + 32).padStart(2, '0') : String(Math.floor(Math.random() * 20) + 5).padStart(2, '0');
+          const inTime = `08:${inMin}:15`;
+
+          samples.push({
             id: 'ATT_' + Date.now() + Math.random(),
             timestamp: `${dateStr}T${inTime}.000Z`,
             dateStr: dateStr,
             timeStr: inTime,
-            empId: emp.id,
-            empName: emp.name,
+            empId: s.id,
+            empName: s.name,
             type: 'IN',
-            ip: appConfig.allowedIP,
-            ssid: appConfig.ssid,
-            note: isLate ? 'Kẹt xe đường chính' : ''
+            ip: appConfig.allowedIp,
+            note: isLate ? 'Kẹt xe' : ''
           });
 
-          // Check-out record (evening ~17:30)
-          const outMinute = String(Math.floor(Math.random() * 25) + 30).padStart(2, '0');
-          const outTime = `17:${outMinute}:45`;
-          sampleLogs.push({
+          const outTime = `17:${String(Math.floor(Math.random() * 20) + 30).padStart(2, '0')}:00`;
+          samples.push({
             id: 'ATT_' + Date.now() + Math.random(),
             timestamp: `${dateStr}T${outTime}.000Z`,
             dateStr: dateStr,
             timeStr: outTime,
-            empId: emp.id,
-            empName: emp.name,
+            empId: s.id,
+            empName: s.name,
             type: 'OUT',
-            ip: appConfig.allowedIP,
-            ssid: appConfig.ssid,
+            ip: appConfig.allowedIp,
             note: ''
           });
         });
       });
 
-      attendanceLogs = sampleLogs;
-      saveLogsToStorage();
-
+      attendanceLogs = samples;
+      saveLogs();
       renderTodayLogs();
-      renderTimesheetView();
-      showToast(`Đã tạo dữ liệu mẫu thành công cho tháng ${currentMonth}/${currentYear}!`, 'success');
+      renderTimesheetReport();
+      showToast(`Đã tạo dữ liệu mẫu cho tháng ${m}/${y}!`, 'success');
     }
 
-    function clearAllData() {
-      if (!window.confirm('CẢNH BÁO: Toàn bộ lịch sử điểm danh sẽ bị xóa vĩnh viễn khỏi thiết bị này! Tiếp tục?')) {
-        return;
-      }
+    function clearAllAttendanceLogs() {
+      if (!window.confirm('CẢNH BÁO: Bạn có chắc muốn xóa sạch toàn bộ lịch sử điểm danh?')) return;
       attendanceLogs = [];
-      saveLogsToStorage();
-
+      saveLogs();
       renderTodayLogs();
-      renderTimesheetView();
-      showToast('Đã xóa toàn bộ lịch sử điểm danh.', 'info');
+      renderTimesheetReport();
+      showToast('Đã xóa sạch lịch sử điểm danh.', 'info');
     }
 
-    function switchTab(tabKey) {
-      const tabs = ['checkin', 'timesheet', 'admin'];
-      tabs.forEach(key => {
-        const sec = document.getElementById(`section-${key}`);
-        const btn = document.getElementById(`tab-${key}`);
-
-        if (key === tabKey) {
-          sec.classList.remove('hidden');
-          btn.className = 'flex items-center gap-1.5 px-3.5 py-2 text-sm font-semibold rounded-lg text-blue-600 bg-blue-50 transition-colors';
-        } else {
-          sec.classList.add('hidden');
-          btn.className = 'flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors';
-        }
-      });
-      lucide.createIcons();
-    }
-
-    function showToast(message, type = 'info') {
-      const container = document.getElementById('toast-container');
+    function showToast(msg, type = 'info') {
+      const wrapper = document.getElementById('toast-wrapper');
       const toast = document.createElement('div');
 
-      let colors = 'bg-slate-900 text-white border-slate-700';
+      let colors = 'bg-slate-900 text-white';
       let icon = 'info';
 
       if (type === 'success') {
-        colors = 'bg-emerald-800 text-white border-emerald-600';
-        icon = 'check-circle';
+        colors = 'bg-emerald-800 text-white';
+        icon = 'check-circle-2';
       } else if (type === 'error') {
-        colors = 'bg-rose-800 text-white border-rose-600';
+        colors = 'bg-rose-800 text-white';
         icon = 'alert-octagon';
       } else if (type === 'warning') {
-        colors = 'bg-amber-800 text-white border-amber-600';
+        colors = 'bg-amber-800 text-white';
         icon = 'alert-triangle';
       }
 
-      toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl text-sm font-medium transition-all duration-300 transform translate-y-3 opacity-0 pointer-events-auto max-w-sm ${colors}`;
+      toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-xs sm:text-sm font-medium transition-all duration-300 transform translate-y-3 opacity-0 pointer-events-auto max-w-sm ${colors}`;
       toast.innerHTML = `
         <i data-lucide="${icon}" class="w-4 h-4 flex-shrink-0"></i>
-        <span class="flex-1">${message}</span>
+        <span class="flex-1">${msg}</span>
       `;
 
-      container.appendChild(toast);
+      wrapper.appendChild(toast);
       lucide.createIcons();
 
-      // Animate In
-      setTimeout(() => {
-        toast.classList.remove('translate-y-3', 'opacity-0');
-      }, 10);
-
-      // Auto Dismiss
+      setTimeout(() => toast.classList.remove('translate-y-3', 'opacity-0'), 10);
       setTimeout(() => {
         toast.classList.add('opacity-0', 'translate-y-3');
-        setTimeout(() => {
-          if (toast.parentNode) toast.parentNode.removeChild(toast);
-        }, 300);
+        setTimeout(() => toast.remove(), 300);
       }, 3500);
     }
   </script>
